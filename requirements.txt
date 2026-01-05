@@ -2,3 +2,7 @@ fastapi
 uvicorn
 torch
 loguru
+attrs
+numpy
+scipy
+soundfile
