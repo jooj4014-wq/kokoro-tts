@@ -5,4 +5,5 @@ transformers
 sentencepiece
 numpy
 scipy
-git+https://github.com/hexgrad/kokoro.git
+misaki==0.7.4
+git+https://github.com/hexgrad/kokoro.git@v0.5.1
