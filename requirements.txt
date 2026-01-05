@@ -1,8 +1,7 @@
 fastapi
 uvicorn
 torch
-loguru
-attrs==23.2.0
+transformers
+sentencepiece
 numpy
 scipy
-soundfile
