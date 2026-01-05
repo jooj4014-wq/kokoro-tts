@@ -5,3 +5,4 @@ transformers
 sentencepiece
 numpy
 scipy
+git+https://github.com/hexgrad/kokoro.git
