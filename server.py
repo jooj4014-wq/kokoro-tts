@@ -1,36 +1,27 @@
-from fastapi import FastAPI, Query
-from fastapi.responses import FileResponse
-import tempfile
+import sys
 import os
 
-from kokoro import KPipeline
+# إضافة مسار kokoro الصحيح
+sys.path.append(os.path.join(os.path.dirname(__file__), "kokoro"))
+
+from fastapi import FastAPI, Query
+from fastapi.responses import FileResponse
+
+from kokoro.pipeline import KPipeline
 
 app = FastAPI()
 
 pipeline = KPipeline(lang="en")
 
-
-@app.get("/")
-def root():
-    return {"status": "ok", "engine": "kokoro-tts"}
-
-
 @app.get("/tts")
-def tts(
-    text: str = Query(..., min_length=1),
-    voice: str = Query("af")
-):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-        output_path = f.name
+def tts(text: str = Query(...)):
+    audio_path = "output.wav"
 
     pipeline(
         text,
-        voice=voice,
-        output_file=output_path
+        voice="af",
+        speed=1.0,
+        output_file=audio_path
     )
 
-    return FileResponse(
-        output_path,
-        media_type="audio/wav",
-        filename="speech.wav"
-    )
+    return FileResponse(audio_path, media_type="audio/wav", filename="output.wav")
