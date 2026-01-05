@@ -7,4 +7,4 @@ numpy
 scipy
 misaki==0.7.4
 git+https://github.com/hexgrad/kokoro.git@9b7d5a3
-flask
+flas
