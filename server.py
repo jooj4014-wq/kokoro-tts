@@ -1,30 +1,35 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-import torch
+from flask import Flask, request, send_file
+import subprocess
+import os
+import uuid
 
-from kokoro.pipeline import KPipeline
+app = Flask(__name__)
 
-app = FastAPI()
+@app.route("/")
+def home():
+    return "Piper TTS is running ✅"
 
-# تحميل نموذج Kokoro مرة واحدة عند تشغيل السيرفر
-pipeline = KPipeline(lang="en")
+@app.route("/tts", methods=["POST"])
+def tts():
+    text = request.json.get("text", "")
+    if not text:
+        return {"error": "No text provided"}, 400
 
-class TTSRequest(BaseModel):
-    text: str
+    output_file = f"/tmp/{uuid.uuid4()}.wav"
 
-@app.post("/tts")
-def tts(request: TTSRequest):
-    audio = pipeline(request.text)
+    cmd = [
+        "piper",
+        "--model", "en_US-lessac-medium",
+        "--output_file", output_file
+    ]
 
-    # حفظ الصوت مؤقتًا
-    output_path = "output.wav"
-    audio.save(output_path)
+    process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    process.stdin.write(text.encode("utf-8"))
+    process.stdin.close()
+    process.wait()
 
-    return {
-        "status": "success",
-        "file": output_path
-    }
+    return send_file(output_file, mimetype="audio/wav")
 
-@app.get("/")
-def root():
-    return {"message": "Kokoro TTS is running"}
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
