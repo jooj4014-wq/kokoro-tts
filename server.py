@@ -1,27 +1,30 @@
-import sys
-import os
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(BASE_DIR, "kokoro"))
-
-from fastapi import FastAPI, Query
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
+from pydantic import BaseModel
+import torch
 
 from kokoro.pipeline import KPipeline
 
 app = FastAPI()
 
+# تحميل نموذج Kokoro مرة واحدة عند تشغيل السيرفر
 pipeline = KPipeline(lang="en")
 
-@app.get("/tts")
-def tts(text: str = Query(...)):
+class TTSRequest(BaseModel):
+    text: str
+
+@app.post("/tts")
+def tts(request: TTSRequest):
+    audio = pipeline(request.text)
+
+    # حفظ الصوت مؤقتًا
     output_path = "output.wav"
+    audio.save(output_path)
 
-    pipeline(
-        text,
-        voice="af",
-        speed=1.0,
-        output_file=output_path
-    )
+    return {
+        "status": "success",
+        "file": output_path
+    }
 
-    return FileResponse(output_path, media_type="audio/wav")
+@app.get("/")
+def root():
+    return {"message": "Kokoro TTS is running"}
