@@ -1,33 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse
-import sys
-import uuid
-
-# إضافة مجلد kokoro لمسار بايثون
-sys.path.append("./kokoro")
+import tempfile
+import os
 
 from kokoro import KPipeline
 
 app = FastAPI()
 
-# تهيئة Kokoro
-pipeline = KPipeline(lang_code="a")  # a = English (تعمل بدون مشاكل)
+pipeline = KPipeline(lang="en")
+
 
 @app.get("/")
 def root():
-    return {"status": "Kokoro TTS is running"}
+    return {"status": "ok", "engine": "kokoro-tts"}
+
 
 @app.get("/tts")
-def tts(text: str):
-    # اسم ملف الصوت
-    output_file = f"/tmp/{uuid.uuid4()}.wav"
+def tts(
+    text: str = Query(..., min_length=1),
+    voice: str = Query("af")
+):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+        output_path = f.name
 
-    # توليد الصوت
-    audio = pipeline(text)
-    audio.save(output_file)
+    pipeline(
+        text,
+        voice=voice,
+        output_file=output_path
+    )
 
     return FileResponse(
-        output_file,
+        output_path,
         media_type="audio/wav",
         filename="speech.wav"
     )
