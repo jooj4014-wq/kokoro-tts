@@ -1,23 +1,33 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+import sys
 import uuid
-import os
-from kokoro import Kokoro
+
+# إضافة مجلد kokoro لمسار بايثون
+sys.path.append("./kokoro")
+
+from kokoro import KPipeline
 
 app = FastAPI()
 
-os.makedirs("audio", exist_ok=True)
-tts = Kokoro()
+# تهيئة Kokoro
+pipeline = KPipeline(lang_code="a")  # a = English (تعمل بدون مشاكل)
 
-@app.post("/tts")
-async def tts_api(data: dict):
-    text = data["text"]
-    filename = f"audio/{uuid.uuid4()}.wav"
-    tts.tts(text, filename)
-    return {
-        "audio_url": f"/audio/{os.path.basename(filename)}"
-    }
+@app.get("/")
+def root():
+    return {"status": "Kokoro TTS is running"}
 
-@app.get("/audio/{file}")
-def get_audio(file: str):
-    return FileResponse(f"audio/{file}")
+@app.get("/tts")
+def tts(text: str):
+    # اسم ملف الصوت
+    output_file = f"/tmp/{uuid.uuid4()}.wav"
+
+    # توليد الصوت
+    audio = pipeline(text)
+    audio.save(output_file)
+
+    return FileResponse(
+        output_file,
+        media_type="audio/wav",
+        filename="speech.wav"
+    )
